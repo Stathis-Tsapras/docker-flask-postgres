@@ -13,12 +13,32 @@ def health():
     logger.info("Health check requested")
     return "OK"
 
+@app.route("/ready")
+def ready():
+  try:
+     conn = psycopg2.connect(
+          host=os.getenv("POSTGRES_HOST", "postgres"),
+          port=5432,
+          dbname=os.getenv("POSTGRES_DB"),
+          user=os.getenv("POSTGRES_USER"),
+          password=os.getenv("POSTGRES_PASSWORD"),
+          connect_timeout=2
+     )
+     try:
+        with conn.cursor() as cursor:
+          cursor.execute("SELECT 1")
+     finally:
+        conn.close()
+     return "Ready", 200
+  except psycopg2.Error:
+     return "Database unavailable", 503
+
 @app.route("/")
 def home():
   logger.info("Connecting to PostgreSQL")
   try:
     conn = psycopg2.connect(
-     host="databases",
+     host=os.getenv("POSTGRES_HOST"),
      port=5432,
      dbname=os.getenv("POSTGRES_DB"),
      user=os.getenv("POSTGRES_USER"),
